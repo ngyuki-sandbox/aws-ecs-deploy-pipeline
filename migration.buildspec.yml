@@ -1,0 +1,9 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - $(aws ecr get-login --no-include-email)
+  build:
+    commands:
+      - docker run --rm $IMAGE_URI echo ok

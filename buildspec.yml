@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - IMAGE_URI
+
+phases:
+  pre_build:
+    commands:
+      - aws --version
+      - $(aws ecr get-login --no-include-email)
+      - IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - IMAGE_URI=$REPOSITORY_URI:$IMAGE_TAG
+  build:
+    commands:
+      - docker build -t $IMAGE_URI .
+  post_build:
+    commands:
+      - docker push $IMAGE_URI
+      - printf '[{"name":"app","imageUri":"%s"}]' $IMAGE_URI > imagedefinitions.json
+      - printf '{"Version":"1.0","ImageURI":"%s"}' $IMAGE_URI > imageDetail.json
+      - aws ecs describe-task-definition --task-definition $ECS_TASK_DEFINITION_ARN --query taskDefinition |
+          jq '.containerDefinitions[0].image="<IMAGE1_NAME>"' > taskdef.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - imageDetail.json
+    - taskdef.json

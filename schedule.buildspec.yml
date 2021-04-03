@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - |
+        aws ecs describe-task-definition --task-definition "$ECS_TASK_DEFINITION_ARN" |
+          jq --arg IMAGE_URI "$IMAGE_URI" '.taskDefinition | {
+            family: .family,
+            executionRoleArn: .executionRoleArn,
+            networkMode: .networkMode,
+            containerDefinitions: .containerDefinitions,
+            requiresCompatibilities: .requiresCompatibilities,
+            cpu: .cpu,
+            memory: .memory
+          } | .containerDefinitions[].image = $IMAGE_URI' > taskdef.json
+      - aws ecs register-task-definition --cli-input-json file://taskdef.json --query taskDefinition > registered.json
+      - aws events list-targets-by-rule --rule "$CWE_RULR_NAME" |
+          jq --slurpfile task registered.json '.Targets | .[].EcsParameters.TaskDefinitionArn = $task[0].taskDefinitionArn' > targets.json
+      - aws events put-targets --rule "$CWE_RULR_NAME" --targets file://targets.json
