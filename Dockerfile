@@ -1,3 +1,6 @@
-FROM nginx:alpine
+FROM php:alpine
 
-COPY app/ /usr/share/nginx/html/
+COPY app/ /app/
+WORKDIR /app/
+
+CMD [ "php", "-S", "0.0.0.0:80" ]
