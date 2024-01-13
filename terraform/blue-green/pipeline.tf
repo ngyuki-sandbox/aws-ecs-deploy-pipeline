@@ -95,26 +95,6 @@ resource "aws_codepipeline" "main" {
         Image1ContainerName            = "IMAGE1_NAME"
       }
     }
-
-    action {
-      name     = "DeploySchedule"
-      category = "Build"
-      owner    = "AWS"
-      provider = "CodeBuild"
-      version  = "1"
-
-      input_artifacts = ["SourceArtifact"]
-
-      configuration = {
-        ProjectName = aws_codebuild_project.schedule.name
-        EnvironmentVariables = jsonencode([
-          {
-            name  = "IMAGE_URI"
-            value = "#{BuildExport.IMAGE_URI}"
-          }
-        ])
-      }
-    }
   }
 }
 
@@ -204,7 +184,6 @@ resource "aws_iam_role_policy" "pipeline" {
         Resource : [
           aws_codebuild_project.main.arn,
           aws_codebuild_project.migration.arn,
-          aws_codebuild_project.schedule.arn,
         ]
       },
       {

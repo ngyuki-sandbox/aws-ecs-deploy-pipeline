@@ -78,43 +78,6 @@ resource "aws_codebuild_project" "migration" {
   }
 }
 
-resource "aws_codebuild_project" "schedule" {
-  name         = "${var.name}-schedule"
-  service_role = aws_iam_role.build.arn
-
-  source {
-    type      = "CODEPIPELINE"
-    buildspec = "deploy/schedule.buildspec.yml"
-  }
-
-  artifacts {
-    type = "CODEPIPELINE"
-  }
-
-  environment {
-    type            = "LINUX_CONTAINER"
-    image           = "aws/codebuild/standard:7.0"
-    compute_type    = "BUILD_GENERAL1_SMALL"
-    privileged_mode = false
-
-    environment_variable {
-      name  = "ECS_TASK_DEFINITION_ARN"
-      value = aws_ecs_task_definition.main.arn
-    }
-
-    environment_variable {
-      name  = "CWE_RULR_NAME"
-      value = aws_cloudwatch_event_rule.schedule.name
-    }
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name = aws_cloudwatch_log_group.build.name
-    }
-  }
-}
-
 resource "aws_iam_role" "build" {
   name = "${var.name}-build"
 
@@ -174,30 +137,6 @@ resource "aws_iam_role_policy" "build" {
         ]
         Effect : "Allow"
         Resource : aws_ecr_repository.main.arn
-      },
-      {
-        Action : [
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
-        ]
-        Effect : "Allow"
-        Resource : "*"
-      },
-      {
-        Action : "iam:PassRole"
-        Effect : "Allow"
-        Resource : [
-          aws_iam_role.ecs_execution.arn,
-          aws_iam_role.schedule.arn,
-        ]
-      },
-      {
-        Action : [
-          "events:ListTargetsByRule",
-          "events:PutTargets",
-        ]
-        Effect : "Allow"
-        Resource : aws_cloudwatch_event_rule.schedule.arn
       },
     ]
   })
