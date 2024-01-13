@@ -27,6 +27,7 @@
           "value": "dev"
         }
       ],
+      "secrets": $SECRETS,
       "mountPoints": [],
       "volumesFrom": [],
       "logConfiguration": {

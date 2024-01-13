@@ -42,6 +42,14 @@ resource "aws_codebuild_project" "main" {
       name  = "ECS_LOG_GROUP_NAME"
       value = aws_cloudwatch_log_group.ecs.name
     }
+
+    environment_variable {
+      name = "SECRETS"
+      value = jsonencode([for key in keys(jsondecode(aws_secretsmanager_secret_version.secret.secret_string)) : {
+        name      = key
+        valueFrom = "${aws_secretsmanager_secret_version.secret.arn}:${key}::"
+      }])
+    }
   }
 
   logs_config {
