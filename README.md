@@ -56,11 +56,25 @@ CodeDeploy ならこの類の問題は解決できそうなので CodeDeploy で
 CodeDeployToECS の taskdef.json をどこから生成するかが問題。
 
 - リポジトリに taskdef.json を入れて CodeBuild で一部置換
-    - 環境変数にリソースの arn を入れる場合にそれを置換させるのがちょっと煩雑ではある
-    - 環境変数を S3 上のファイルにも出来るので ConfigMap のような感覚で別ファイル参照させると良いかも
-- terraform 管理のタスク定義からイメージのみ置換
-    - イメージ以外は terraform での管理で、イメージのみ CodePipeline にできる
-    - 環境変数などの変更時に最新のタスク定義を仮のイメージで作成する必要があるため後述の EventBridge ターゲットで最新リビジョン指定していると都合が悪い
+    - family/executionRoleArn/taskRoleArn/secrets などを CodeBuild の環境変数に入れて置換
+- terraform 管理のタスク定義からイメージのみ置換して taskdef.json を生成
+    - タスク定義は terraform 管理、イメージのみ CodePipeline で更新
+    - 前者のタスク定義をテンプレートと位置付けて、CodePipeline が作成するタスク定義とは別にするとスッキリするかも
+- CodeBuild の環境変数に taskdef.json そのものを入れる
+    - タスク定義は terraform 管理、イメージのみ CodePipeline で更新、なのは前者と同じ
+    - buildspec.yml でやることが少なくて済むのでシンプル
+- terraform で S3 に taskdef.json を作成して CodePipeline のソースにする
+    - terraform で taskdef.json を更新すればデプロイが走るし、良さそう
+    - jsonencode を使うと `<` や `>` がエスケープされてしまってダメなので注意
+
+## キューワーカー用のサービス
+
+CodeDeployToECS によるデプロイだとロードバランサが必須なのでキューワーカー用のサービスの場合は ECS の Rolling Update にするしかない。
+その場合に CodePipeline を使うと、デプロイ時のタスク定義が元のサービスに適用されているタスク定義の一部置換になってしまうため、
+CodeDeployToECS のときのように taskdef.json を別に提供、みたいなことができない。
+
+ECS アクションも taskdef.json を別に指定する、とかであれば簡単だったのだけど・・方針を揃えるためには
+キューワーカー用のサービスでは CodeBuild でタスク定義＆サービス更新を個別に処理するしかない。
 
 ## EventBridge Schedule
 
