@@ -1,4 +1,4 @@
-FROM php:alpine
+FROM public.ecr.aws/docker/library/php:alpine
 
 COPY app/ /app/
 WORKDIR /app/
