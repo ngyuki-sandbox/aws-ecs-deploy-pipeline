@@ -38,34 +38,6 @@ resource "aws_codebuild_project" "main" {
       name  = "ECR_REPOSITORY_URL"
       value = aws_ecr_repository.main.repository_url
     }
-
-    environment_variable {
-      name  = "ECS_TASK_FAMILY"
-      value = aws_ecs_task_definition.main.family
-    }
-
-    environment_variable {
-      name  = "ECS_EXECUTION_ROLE_ARN"
-      value = aws_iam_role.ecs_execution.arn
-    }
-
-    environment_variable {
-      name  = "ECS_TASK_ROLE_ARN"
-      value = aws_iam_role.ecs_task.arn
-    }
-
-    environment_variable {
-      name  = "ECS_LOG_GROUP_NAME"
-      value = aws_cloudwatch_log_group.ecs.name
-    }
-
-    environment_variable {
-      name = "SECRETS"
-      value = jsonencode([for key in keys(jsondecode(aws_secretsmanager_secret_version.secret.secret_string)) : {
-        name      = key
-        valueFrom = "${aws_secretsmanager_secret_version.secret.arn}:${key}::"
-      }])
-    }
   }
 }
 

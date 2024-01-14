@@ -26,6 +26,22 @@ resource "aws_codepipeline" "main" {
         PollForSourceChanges = "false"
       }
     }
+
+    action {
+      name     = "TaskDef"
+      category = "Source"
+      owner    = "AWS"
+      provider = "S3"
+      version  = "1"
+
+      output_artifacts = ["TaskDef"]
+
+      configuration = {
+        S3Bucket             = aws_s3_bucket.main.id
+        S3ObjectKey          = "taskdef.zip"
+        PollForSourceChanges = "true"
+      }
+    }
   }
 
   stage {
@@ -80,14 +96,14 @@ resource "aws_codepipeline" "main" {
       version   = "1"
       run_order = 2
 
-      input_artifacts = ["Source", "Build"]
+      input_artifacts = ["Build", "TaskDef"]
 
       configuration = {
         ApplicationName                = aws_codedeploy_app.deploy.name
         DeploymentGroupName            = aws_codedeploy_deployment_group.deploy.deployment_group_name
-        AppSpecTemplateArtifact        = "Source"
-        AppSpecTemplatePath            = "deploy/appspec.yml"
-        TaskDefinitionTemplateArtifact = "Build"
+        AppSpecTemplateArtifact        = "TaskDef"
+        AppSpecTemplatePath            = "appspec.yml"
+        TaskDefinitionTemplateArtifact = "TaskDef"
         TaskDefinitionTemplatePath     = "taskdef.json"
         Image1ArtifactName             = "Build"
         Image1ContainerName            = "IMAGE1_NAME"
@@ -158,6 +174,16 @@ resource "aws_iam_role_policy" "pipeline" {
         ]
         Effect : "Allow"
         Resource : "${aws_s3_bucket.main.arn}/*"
+      },
+      {
+        Action : [
+          "s3:*"
+        ]
+        Effect : "Allow"
+        Resource : [
+          "${aws_s3_bucket.main.arn}",
+          "${aws_s3_bucket.main.arn}/*",
+        ]
       },
       {
         Action : [

@@ -26,11 +26,8 @@ phases:
     commands:
       - printf '[{"name":"app","imageUri":"%s"}]' $IMAGE_URI > imagedefinitions.json
       - printf '{"Version":"1.0","ImageURI":"%s"}' $IMAGE_URI > imageDetail.json
-      - envsubst < deploy/taskdef.json > taskdef.json
-      - cat taskdef.json
 
 artifacts:
   files:
     - imagedefinitions.json
     - imageDetail.json
-    - taskdef.json
