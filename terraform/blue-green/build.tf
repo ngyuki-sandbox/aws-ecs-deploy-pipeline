@@ -88,6 +88,13 @@ resource "aws_codebuild_project" "migration" {
     }
   }
 
+  # TODO: プライベートサブネットで NAT ゲートウェイが必要
+  # vpc_config {
+  #   vpc_id             = aws_vpc.main.id
+  #   subnets            = [for subnet in aws_subnet.main : subnet.id]
+  #   security_group_ids = [aws_security_group.main.id]
+  # }
+
   environment {
     type            = "LINUX_CONTAINER"
     image           = "aws/codebuild/standard:7.0"
@@ -155,6 +162,20 @@ resource "aws_iam_role_policy" "build" {
         ]
         Effect : "Allow"
         Resource : aws_ecr_repository.main.arn
+      },
+      {
+        Action : [
+          "ec2:CreateNetworkInterface",
+          "ec2:CreateNetworkInterfacePermission",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeDhcpOptions",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+        ]
+        Effect : "Allow"
+        Resource : "*"
       },
     ]
   })
