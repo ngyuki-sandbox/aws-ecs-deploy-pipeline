@@ -12,6 +12,17 @@ resource "aws_codebuild_project" "main" {
     type = "CODEPIPELINE"
   }
 
+  cache {
+    type  = "LOCAL"
+    modes = ["LOCAL_DOCKER_LAYER_CACHE", "LOCAL_SOURCE_CACHE"]
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.build.name
+    }
+  }
+
   environment {
     type            = "LINUX_CONTAINER"
     image           = "aws/codebuild/standard:7.0"
@@ -19,14 +30,13 @@ resource "aws_codebuild_project" "main" {
     privileged_mode = true
 
     environment_variable {
+      name  = "TZ"
+      value = "Asia/Tokyo"
+    }
+
+    environment_variable {
       name  = "ECR_REPOSITORY_URL"
       value = aws_ecr_repository.main.repository_url
-    }
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name = aws_cloudwatch_log_group.build.name
     }
   }
 }

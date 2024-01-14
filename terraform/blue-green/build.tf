@@ -12,6 +12,17 @@ resource "aws_codebuild_project" "main" {
     type = "CODEPIPELINE"
   }
 
+  cache {
+    type  = "LOCAL"
+    modes = ["LOCAL_DOCKER_LAYER_CACHE", "LOCAL_SOURCE_CACHE"]
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.build.name
+    }
+  }
+
   environment {
     type            = "LINUX_CONTAINER"
     image           = "aws/codebuild/standard:7.0"
@@ -51,12 +62,6 @@ resource "aws_codebuild_project" "main" {
       }])
     }
   }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name = aws_cloudwatch_log_group.build.name
-    }
-  }
 }
 
 resource "aws_codebuild_project" "migration" {
@@ -72,17 +77,22 @@ resource "aws_codebuild_project" "migration" {
     type = "CODEPIPELINE"
   }
 
-  environment {
-    type            = "LINUX_CONTAINER"
-    image           = "aws/codebuild/standard:7.0"
-    compute_type    = "BUILD_GENERAL1_SMALL"
-    privileged_mode = true
+  cache {
+    type  = "LOCAL"
+    modes = ["LOCAL_DOCKER_LAYER_CACHE", "LOCAL_SOURCE_CACHE"]
   }
 
   logs_config {
     cloudwatch_logs {
       group_name = aws_cloudwatch_log_group.build.name
     }
+  }
+
+  environment {
+    type            = "LINUX_CONTAINER"
+    image           = "aws/codebuild/standard:7.0"
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    privileged_mode = true
   }
 }
 
