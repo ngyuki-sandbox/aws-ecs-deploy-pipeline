@@ -49,14 +49,15 @@ resource "aws_codepipeline" "main" {
   }
 
   stage {
-    name = "Migration"
+    name = "Deploy"
 
     action {
-      name     = "Migration"
-      category = "Build"
-      owner    = "AWS"
-      provider = "CodeBuild"
-      version  = "1"
+      name      = "Migration"
+      category  = "Build"
+      owner     = "AWS"
+      provider  = "CodeBuild"
+      version   = "1"
+      run_order = 1
 
       input_artifacts = ["SourceArtifact"]
 
@@ -70,17 +71,14 @@ resource "aws_codepipeline" "main" {
         ])
       }
     }
-  }
-
-  stage {
-    name = "Deploy"
 
     action {
-      name     = "Deploy"
-      category = "Deploy"
-      owner    = "AWS"
-      provider = "CodeDeployToECS"
-      version  = "1"
+      name      = "Deploy"
+      category  = "Deploy"
+      owner     = "AWS"
+      provider  = "CodeDeployToECS"
+      version   = "1"
+      run_order = 2
 
       input_artifacts = ["SourceArtifact", "BuildArtifact"]
 
