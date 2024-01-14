@@ -1,22 +1,28 @@
 version: 0.2
 
 env:
+  shell: bash
   exported-variables:
     - IMAGE_URI
 
 phases:
   pre_build:
+    on-failure: ABORT
     commands:
       - aws --version
       - aws ecr get-login-password | docker login --username AWS --password-stdin "$ECR_REPOSITORY_URL"
-      - IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - IMAGE_URI=$ECR_REPOSITORY_URL:$IMAGE_TAG
+      - COMMIT_HASH=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}
+      - IMAGE_URI=$ECR_REPOSITORY_URL:$COMMIT_HASH
+      - BUILD_DATE="$(date +%Y-%m-%dT%H:%M:%S)"
+
   build:
+    on-failure: ABORT
     commands:
-      - docker build -t $IMAGE_URI .
+      - docker buildx build --push -t "$IMAGE_URI" --build-arg "COMMIT_HASH=$COMMIT_HASH" --build-arg "BUILD_DATE=$BUILD_DATE" .
+
   post_build:
+    on-failure: ABORT
     commands:
-      - docker push $IMAGE_URI
       - printf '[{"name":"app","imageUri":"%s"}]' $IMAGE_URI > imagedefinitions.json
       - printf '{"Version":"1.0","ImageURI":"%s"}' $IMAGE_URI > imageDetail.json
       - envsubst < deploy/taskdef.json > taskdef.json
