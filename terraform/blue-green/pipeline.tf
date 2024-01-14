@@ -18,7 +18,7 @@ resource "aws_codepipeline" "main" {
       provider = "CodeCommit"
       version  = "1"
 
-      output_artifacts = ["SourceArtifact"]
+      output_artifacts = ["Source"]
 
       configuration = {
         RepositoryName       = aws_codecommit_repository.main.repository_name
@@ -32,15 +32,15 @@ resource "aws_codepipeline" "main" {
     name = "Build"
 
     action {
-      name      = "Build"
-      namespace = "BuildExport"
-      category  = "Build"
-      owner     = "AWS"
-      provider  = "CodeBuild"
-      version   = "1"
+      name     = "Build"
+      category = "Build"
+      owner    = "AWS"
+      provider = "CodeBuild"
+      version  = "1"
 
-      input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact"]
+      namespace        = "BuildVariables"
+      input_artifacts  = ["Source"]
+      output_artifacts = ["Build"]
 
       configuration = {
         ProjectName = aws_codebuild_project.main.name
@@ -59,14 +59,14 @@ resource "aws_codepipeline" "main" {
       version   = "1"
       run_order = 1
 
-      input_artifacts = ["SourceArtifact"]
+      input_artifacts = ["Source"]
 
       configuration = {
         ProjectName = aws_codebuild_project.migration.name
         EnvironmentVariables = jsonencode([
           {
             name  = "IMAGE_URI"
-            value = "#{BuildExport.IMAGE_URI}"
+            value = "#{BuildVariables.IMAGE_URI}"
           }
         ])
       }
@@ -80,16 +80,16 @@ resource "aws_codepipeline" "main" {
       version   = "1"
       run_order = 2
 
-      input_artifacts = ["SourceArtifact", "BuildArtifact"]
+      input_artifacts = ["Source", "Build"]
 
       configuration = {
         ApplicationName                = aws_codedeploy_app.deploy.name
         DeploymentGroupName            = aws_codedeploy_deployment_group.deploy.deployment_group_name
-        AppSpecTemplateArtifact        = "SourceArtifact"
+        AppSpecTemplateArtifact        = "Source"
         AppSpecTemplatePath            = "deploy/appspec.yml"
-        TaskDefinitionTemplateArtifact = "BuildArtifact"
+        TaskDefinitionTemplateArtifact = "Build"
         TaskDefinitionTemplatePath     = "taskdef.json"
-        Image1ArtifactName             = "BuildArtifact"
+        Image1ArtifactName             = "Build"
         Image1ContainerName            = "IMAGE1_NAME"
       }
     }
