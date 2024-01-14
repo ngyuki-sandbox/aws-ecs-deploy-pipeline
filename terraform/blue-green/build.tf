@@ -30,6 +30,11 @@ resource "aws_codebuild_project" "main" {
     privileged_mode = true
 
     environment_variable {
+      name  = "TZ"
+      value = "Asia/Tokyo"
+    }
+
+    environment_variable {
       name  = "ECR_REPOSITORY_URL"
       value = aws_ecr_repository.main.repository_url
     }
@@ -100,6 +105,11 @@ resource "aws_codebuild_project" "migration" {
     image           = "aws/codebuild/standard:7.0"
     compute_type    = "BUILD_GENERAL1_SMALL"
     privileged_mode = true
+
+    environment_variable {
+      name  = "TZ"
+      value = "Asia/Tokyo"
+    }
 
     dynamic "environment_variable" {
       for_each = keys(jsondecode(nonsensitive(aws_secretsmanager_secret_version.secret.secret_string)))

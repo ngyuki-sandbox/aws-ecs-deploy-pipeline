@@ -3,6 +3,7 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - date
       - aws ecr get-login-password | docker login --username AWS --password-stdin "$IMAGE_URI"
   build:
     commands:
