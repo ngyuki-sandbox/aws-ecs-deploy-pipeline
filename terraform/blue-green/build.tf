@@ -100,6 +100,15 @@ resource "aws_codebuild_project" "migration" {
     image           = "aws/codebuild/standard:7.0"
     compute_type    = "BUILD_GENERAL1_SMALL"
     privileged_mode = true
+
+    dynamic "environment_variable" {
+      for_each = keys(jsondecode(nonsensitive(aws_secretsmanager_secret_version.secret.secret_string)))
+      content {
+        name  = environment_variable.value
+        type  = "SECRETS_MANAGER"
+        value = "${aws_secretsmanager_secret.secret.name}:${environment_variable.value}"
+      }
+    }
   }
 }
 
@@ -176,6 +185,11 @@ resource "aws_iam_role_policy" "build" {
         ]
         Effect : "Allow"
         Resource : "*"
+      },
+      {
+        Action : "secretsmanager:GetSecretValue"
+        Effect : "Allow"
+        Resource : aws_secretsmanager_secret.secret.arn
       },
     ]
   })

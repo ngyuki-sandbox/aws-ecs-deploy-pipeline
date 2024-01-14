@@ -6,4 +6,4 @@ phases:
       - aws ecr get-login-password | docker login --username AWS --password-stdin "$IMAGE_URI"
   build:
     commands:
-      - docker run --rm "$IMAGE_URI" echo ok
+      - docker run --rm --env "APP_KEY=$APP_KEY" "$IMAGE_URI" env | grep ^APP_
