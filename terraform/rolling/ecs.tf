@@ -18,13 +18,16 @@ resource "aws_ecs_task_definition" "main" {
       name      = "app"
       image     = "nginx:alpine"
       essential = true
-      environment = [
-        { name = "APP_ENV", value = "dev" }
-      ]
       portMappings = [
         {
           containerPort = 80
           protocol      = "tcp"
+        }
+      ]
+      secrets = [
+        for key in keys(jsondecode(aws_secretsmanager_secret_version.secret.secret_string)) : {
+          name      = key
+          valueFrom = "${aws_secretsmanager_secret_version.secret.arn}:${key}::"
         }
       ]
       logConfiguration = {
@@ -83,6 +86,19 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy" "ecs_execution_secret" {
+  role = aws_iam_role.ecs_execution.name
+  name = "secret"
+  policy = jsonencode({
+    Version : "2012-10-17"
+    Statement : [{
+      Action : "secretsmanager:GetSecretValue"
+      Effect : "Allow"
+      Resource : aws_secretsmanager_secret.secret.arn
+    }]
+  })
+}
+
 resource "aws_iam_role" "ecs_task" {
   name = "${var.name}-ecs-task"
 
@@ -93,5 +109,26 @@ resource "aws_iam_role" "ecs_task" {
       Effect : "Allow"
       Principal : { Service : "ecs-tasks.amazonaws.com" }
     }]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_task" {
+  role = aws_iam_role.ecs_task.name
+  name = aws_iam_role.ecs_task.name
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ],
+        "Resource" : "*"
+      }
+    ]
   })
 }

@@ -18,7 +18,7 @@ resource "aws_codepipeline" "main" {
       provider = "CodeCommit"
       version  = "1"
 
-      output_artifacts = ["SourceArtifact"]
+      output_artifacts = ["Source"]
 
       configuration = {
         RepositoryName       = aws_codecommit_repository.main.repository_name
@@ -38,8 +38,8 @@ resource "aws_codepipeline" "main" {
       provider = "CodeBuild"
       version  = "1"
 
-      input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact"]
+      input_artifacts  = ["Source"]
+      output_artifacts = ["Build"]
 
       configuration = {
         ProjectName = aws_codebuild_project.main.name
@@ -72,7 +72,7 @@ resource "aws_codepipeline" "main" {
       provider = "ECS"
       version  = "1"
 
-      input_artifacts = ["BuildArtifact"]
+      input_artifacts = ["Build"]
 
       configuration = {
         ClusterName = aws_ecs_cluster.main.name
